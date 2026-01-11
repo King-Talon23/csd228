@@ -8,7 +8,7 @@ version: 2
 updates:
   - package-ecosystem: "devcontainers"
     directory: "/"
-    label:
+    labels:
       - devcontainer
       - dependabot
       # TODO: Add CI to rebuild the devcontainer once a month on label. Should just push successful builds closing the
@@ -20,6 +20,6 @@ updates:
     directory: "/" # Do it at the workspace root since that is where dart dependency resolution data lives there.
     schedule:
       interval: monthly
-    label:
+    labels:
       - dependabot
       - dart
