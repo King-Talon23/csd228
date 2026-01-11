@@ -1,0 +1,88 @@
+name: Dart CI
+on:
+  pull_request:
+
+# Ensure that this workflow gets cancelled on changes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Precaches the Flutter SDK before running the Dart & Flutter CI to save time.
+  precache:
+    if: contains(github.event.pull_request.labels.*.name, 'dart')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: 'true'
+      - run: flutter pub get
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.home }}/.pub-cache # The path to cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }} # Cache key based on OS and lock file
+          restore-keys: |
+              ${{ runner.os }}-pub-
+
+  fmt:
+    needs: precache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: 'true'
+      - run: dart format **/*.dart --set-exit-if-changed
+
+  lint:
+    needs: precache
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [ 'Lectures', 'Assignments' ]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: 'true'
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.home }}/.pub-cache # The path to cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }} # Cache key based on OS and lock file
+          restore-keys: |
+            ${{ runner.os }}-pub-
+      - run: flutter pub get
+      - run: dart analyze ./${{ matrix.project }}/**/
+
+  unit-tests:
+    needs: precache
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [ 'Lectures', 'Assignments' ]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: 'true'
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.home }}/.pub-cache # The path to cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }} # Cache key based on OS and lock file
+          restore-keys: |
+            ${{ runner.os }}-pub-
+      - run: flutter test ./${{ matrix.project }}/**/
