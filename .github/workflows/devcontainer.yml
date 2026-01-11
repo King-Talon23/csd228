@@ -20,10 +20,14 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }} # Use the built-in GITHUB_TOKEN secret
-
+      - id: lc
+        run: echo "repo=${REPOSITORY,,}" >> ${GITHUB_OUTPUT}
+        env:
+          REPOSITORY: ${{ github.repository }}
       - name: Build and push Dev Container image
         uses: devcontainers/ci@v0.3
         with:
-          imageName: ghcr.io/${{ github.repository }}/flutter-debian-devcontainer
-          cacheFrom: ghcr.io/${{ github.repository }}/flutter-debian-devcontainer
-          push: true
+          imageName: ghcr.io/${{ steps.lc.outputs.repo }}/flutter-debian-devcontainer
+          cacheFrom: ghcr.io/${{ steps.lc.outputs.repo }}/flutter-debian-devcontainer
+          push: false
+          platform: linux/amd64
